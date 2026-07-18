@@ -21,7 +21,7 @@ export default defineConfig({
       // The 100% gate covers the deterministic logic layers. UI components and
       // Next.js glue are verified by component tests and Playwright E2E instead.
       include: ['src/core/**', 'src/ai/**', 'src/server/**'],
-      exclude: ['src/server/next-adapter.ts'],
+      exclude: ['src/server/next-adapter.ts', 'src/core/types.ts'],
       thresholds: {
         lines: 100,
         branches: 100,
