@@ -1,20 +1,70 @@
-# Wayfare
+<div align="center">
 
-**Calm, step-free stadium wayfinding for World Cup fans — routes that read the crowd, narrated in your language.**
+<h1>🧭 Wayfare</h1>
 
-[![CI](https://img.shields.io/badge/CI-quality%20gate-2ea44f)](./ci/ci.yml)
+### Calm, step-free stadium wayfinding for World Cup fans — routes that read the crowd, narrated in your language.
+
+[![Live Demo](https://img.shields.io/badge/%E2%96%B6%20Live%20Demo-wayfare--beta.vercel.app-000000?style=for-the-badge&logo=vercel)](https://wayfare-beta.vercel.app/)
+
+[![CI quality gate](https://img.shields.io/badge/CI-quality%20gate-2ea44f)](./ci/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-100%25%20line%20%26%20branch-2ea44f)](./vitest.config.ts)
+[![Mutation](https://img.shields.io/badge/mutation-90.3%25%20core-2ea44f)](./stryker.config.json)
+[![Tests](https://img.shields.io/badge/tests-134%20passing-2ea44f)](./tests)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)](./tsconfig.json)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
-[![Made with Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org)
 
-> **Live demo:** _add your deployment URL here after `vercel --prod`._
+<em>Built for the FIFA World Cup 2026 &mdash; Smart Stadiums &amp; Tournament Operations.</em>
+
+</div>
+
+---
 
 Wayfare helps a fan who cares about **how** they move — a wheelchair user, a
 parent with a pram, someone who finds dense crowds overwhelming — get from their
 gate to their seat by the **least-crowded accessible path** through a packed
 tournament stadium, and reads the directions back in their language.
 
+> **One persona, solved deeply.** Not a generic map with an accessibility toggle
+> bolted on — an engine that treats step-free, crowd-calm movement as the
+> *primary* problem.
+
 ![Wayfare computing a crowd-avoiding, step-free route across the concourse; the highlighted path detours up and over the congested lower ring to reach the accessible platform.](./docs/screenshot.png)
+
+<div align="center">
+<a href="https://wayfare-beta.vercel.app/"><strong>▶ Try the live demo →</strong></a>
+</div>
+
+---
+
+## Contents
+
+- [Try it in 30 seconds](#try-it-in-30-seconds)
+- [The persona and the problem](#the-persona-and-the-problem)
+- [What makes Wayfare different](#what-makes-wayfare-different)
+- [Approach: decisions are deterministic, the AI only phrases them](#approach-decisions-are-deterministic-the-ai-only-phrases-them)
+- [Technical gravity (the CS that stands on its own)](#technical-gravity-the-cs-that-stands-on-its-own)
+- [Tech stack](#tech-stack)
+- [Project structure](#project-structure)
+- [Problem-alignment map](#problem-alignment-map)
+- [Quality → evidence map](#quality--evidence-map)
+- [Getting started](#getting-started)
+- [Using synthetic crowd data](#using-synthetic-crowd-data)
+- [Assumptions](#assumptions)
+- [License](#license)
+
+---
+
+## Try it in 30 seconds
+
+1. Open the **[live demo](https://wayfare-beta.vercel.app/)**.
+2. Pick a **gate** you arrive at and the **seat** you're headed to.
+3. Choose an **access profile** — try **Wheelchair**.
+4. Watch Wayfare draw a **step-free, crowd-avoiding** path and narrate the
+   turn-by-turn directions. Switch the profile to *Walking* and watch the route
+   change as stairs become allowed.
+
+> 💡 No sign-up, no API key, works even if the network drops mid-session.
 
 ---
 
@@ -35,6 +85,21 @@ Wayfare solves exactly this, deeply, for one persona:
   weighting every segment by live crowd density so it steers around crushes.
 - It narrates the result in the fan's language — and still works perfectly with
   no network and no API key.
+
+---
+
+## What makes Wayfare different
+
+| | | |
+| --- | --- | --- |
+| ♿ **Access-first routing** | Stairs are *infeasible* for a wheelchair profile, not merely discouraged — the engine will never hand you an impossible path. | `src/core/routing.ts` |
+| 🌊 **Reads the crowd** | Every segment is penalised by time-indexed crowd density, so the route bends around crushes instead of through them. | `src/core/crowd.ts` |
+| 🗣️ **Speaks your language** | Turn-by-turn narration is localized, including right-to-left languages. | `src/ai/narrator.ts` |
+| 🔌 **Fails safe, always** | Delete every AI call and Wayfare still computes correct, accessible routes. The model only makes the last mile friendlier. | `src/ai/fallback.ts` |
+| 🔒 **Injection-proof by design** | The LLM never makes a decision, so it can never be tricked into inventing a turn. | `src/core/geometry.ts` |
+| 🧪 **Proven, not promised** | 134 tests, 100% line & branch coverage on the core, mutation-tested. | `tests/`, `stryker.config.json` |
+
+---
 
 ## Approach: decisions are deterministic, the AI only phrases them
 
@@ -61,6 +126,8 @@ flowchart LR
 If you deleted every AI call, Wayfare would still compute and display correct,
 accessible, crowd-aware routes. The model only makes the last mile friendlier.
 
+---
+
 ## Technical gravity (the CS that stands on its own)
 
 - **Crowd- and accessibility-aware routing** — Dijkstra's algorithm over a
@@ -75,6 +142,23 @@ accessible, crowd-aware routes. The model only makes the last mile friendlier.
   `O(1)` node and neighbour access. See `src/core/graph.ts`.
 - **Deterministic turn geometry** — turn directions are derived from planar
   bearings, so narration can never invent a turn. See `src/core/geometry.ts`.
+
+---
+
+## Tech stack
+
+| Layer | Choices |
+| ----- | ------- |
+| **Framework** | Next.js 15 (App Router), React 18, TypeScript (strict) |
+| **Routing engine** | Pure TypeScript — Dijkstra + hand-written binary min-heap, no graph library |
+| **Validation** | Zod strict schemas with DoS guards |
+| **AI narration** | Google Gemini (phrasing only) with a deterministic offline fallback |
+| **Security** | Nonce CSP, hardening headers, fixed-window rate limiter, sanitized error envelopes |
+| **Testing** | Vitest (unit + branch + component/a11y), Playwright + axe (e2e), Stryker (mutation) |
+| **Quality gates** | ESLint (strict-type-checked + sonarjs + jsx-a11y), Prettier, jscpd, knip, madge |
+| **Deploy** | Vercel |
+
+---
 
 ## Project structure
 
@@ -91,6 +175,8 @@ tests/         Unit, edge-case, branch, and component/a11y suites (Vitest)
 e2e/           Playwright end-to-end + axe accessibility scan
 ```
 
+---
+
 ## Problem-alignment map
 
 | Domain need (Smart Stadiums)         | Feature in Wayfare                                | Where it lives                                       |
@@ -101,6 +187,8 @@ e2e/           Playwright end-to-end + axe accessibility scan
 | A global, multilingual audience      | Localized narration incl. right-to-left languages | `src/ai/narrator.ts`, `src/server/config.ts`         |
 | Real-time crowd awareness            | Time-sliced crowd heat overlay on the map         | `src/app/api/route`, `src/components/StadiumMap.tsx` |
 | Genuine, functional GenAI            | LLM narration with deterministic fallback         | `src/ai/`, `src/app/api/narrate`                     |
+
+---
 
 ## Quality → evidence map
 
@@ -123,6 +211,8 @@ Every claim below is reproducible with one command; run them and read the output
 - **0** type errors, **0** lint findings (`--max-warnings=0`), **0%** code
   duplication, **0** circular dependencies, **0** unused files/exports/deps.
 - **0** known vulnerabilities in production dependencies (`npm audit --omit=dev`).
+
+---
 
 ## Getting started
 
@@ -155,14 +245,19 @@ the scripts above.
 
 ### Deploy (Vercel)
 
+Wayfare is deployed at **[wayfare-beta.vercel.app](https://wayfare-beta.vercel.app/)**.
+To deploy your own instance:
+
 ```bash
 npm i -g vercel
 vercel            # link the project (first run)
-vercel --prod     # deploy; copy the printed URL into the demo link above
+vercel --prod     # deploy
 ```
 
 Set `GEMINI_API_KEY` (and optionally `GEMINI_MODEL`) as Vercel environment
 variables to enable model narration in production.
+
+---
 
 ## Using synthetic crowd data
 
@@ -179,6 +274,8 @@ lc-n,lc-ne,600,0.90
 `density` is crowd density from 0 (empty) to 1 (standstill). JSON with the same
 fields is also accepted.
 
+---
+
 ## Assumptions
 
 - The stadium graph and crowd feed are **synthetic but realistic**; the
@@ -191,3 +288,13 @@ fields is also accepted.
   fully usable without one.
 - Distances are in metres and walking speeds are per-profile estimates used only
   for the time estimate, not for routing feasibility.
+
+---
+
+## License
+
+Released under the [MIT License](./LICENSE).
+
+<div align="center">
+<sub>Built with a deterministic core and an AI narrator — because the fan who needs the calmest path deserves the most reliable map. 🧭</sub>
+</div>
