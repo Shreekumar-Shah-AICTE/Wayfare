@@ -26,6 +26,12 @@ function initialForm(metadata: MetadataPayload): RouteForm {
   };
 }
 
+/**
+ * The stateful client page: it loads stadium metadata, auto-plans the demo
+ * route, and owns the form, route, and narration state that {@link PlannerLayout}
+ * renders. All routing decisions come from the server/core; this component only
+ * orchestrates fetches and holds UI state.
+ */
 export default function HomePage(): ReactElement {
   const [metadata, setMetadata] = useState<MetadataPayload | null>(null);
   const [datasets, setDatasets] = useState<readonly DatasetSummary[]>([]);
