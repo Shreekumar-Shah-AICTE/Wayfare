@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Least-privilege by default; jobs opt into more only if they need it.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Secret scan (gitleaks)
+        run: |
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz" \
+            | tar -xz gitleaks
+          ./gitleaks detect --source . --no-banner --redact --exit-code 1
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint (zero warnings)
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Duplication (0%)
+        run: npm run dup
+
+      - name: Dead code / unused deps
+        run: npm run knip
+
+      - name: Circular dependencies
+        run: npm run madge
+
+      - name: Unit tests + 100% line & branch coverage
+        run: npm run test:cov
+
+      - name: Mutation testing (>= 90% on core)
+        run: npm run mutation
+
+      - name: Production dependency audit
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Production build
+        run: npm run build
+
+  e2e:
+    name: E2E + accessibility (axe)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E + axe scan
+        run: npm run e2e
